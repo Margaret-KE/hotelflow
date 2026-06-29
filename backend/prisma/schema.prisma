@@ -33,6 +33,134 @@ model Tenant {
 
   isActive Boolean @default(true)
 
+  subscriptionPlan String?   @default("Enterprise")
+  subscriptionEnds DateTime?
+
+  roles Role[]
+  users User[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  roles RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id String @id @default(uuid())
+
+  tenantId String
+
+  code String
+  name String
+
+  description String?
+
+  isSystem Boolean @default(false)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  users User[]
+
+  permissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, name])
+}
+
+model RolePermission {
+  roleId String
+
+  permissionId String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model User {
+  id String @id @default(uuid())
+
+  tenantId String
+  roleId   String
+
+  firstName String
+  lastName  String
+
+  email String
+  phone String?
+
+  password String
+
+  avatar String?
+
+  isActive Boolean @default(true)
+
+  lastLogin DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  role Role @relation(fields: [roleId], references: [id])
+
+  refreshTokens RefreshToken[]
+
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, email])
+}
+
+model RefreshToken {
+  id String @id @default(uuid())
+
+  userId String
+
+  token String @unique
+
+  expiresAt DateTime
+
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  userId String
+
+  action String
+
+  entity String
+
+  entityId String?
+
+  description String?
+
+  ipAddress String?
+
+  userAgent String?
+
+  metadata Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
