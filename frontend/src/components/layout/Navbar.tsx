@@ -1,6 +1,8 @@
 import { Hotel, Menu } from "lucide-react";
 import { BRAND } from "../../constants/branding";
-import { NAVIGATION } from "../../constants/navigation";
+import { LANDING_NAVIGATION } from "../../constants/landingNavigation";
+import { Link } from "react-router-dom";
+import { ROUTES } from "../../constants/routes";
 
 export default function Navbar() {
   return (
@@ -25,7 +27,7 @@ export default function Navbar() {
 
         {/* Navigation */}
         <nav className="hidden items-center gap-8 md:flex">
-          {NAVIGATION.map((item) => (
+          {LANDING_NAVIGATION.map((item) => (
             <a
               key={item.label}
               href={item.href}
@@ -38,9 +40,12 @@ export default function Navbar() {
 
         {/* Buttons */}
         <div className="hidden items-center gap-3 md:flex">
-          <button className="rounded-lg border border-green-700 px-5 py-2 text-green-700 transition hover:bg-green-50">
-            Staff Login
-          </button>
+          <Link
+  to={ROUTES.LOGIN}
+  className="rounded-lg border border-green-700 px-5 py-2 text-green-700 transition hover:bg-green-50"
+>
+  Staff Login
+</Link>
 
           <button className="rounded-lg bg-green-700 px-5 py-2 text-white transition hover:bg-green-800">
             Request Demo
