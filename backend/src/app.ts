@@ -7,6 +7,8 @@ import morgan from "morgan";
 import authRoutes from "./modules/auth/auth.routes";
 import notFound from "./middleware/notFound";
 import errorHandler from "./middleware/errorHandler";
+import roomTypeRoutes from "./modules/room-types/roomType.routes";
+import roomRoutes from "./modules/rooms/room.routes";
 
 const app = express();
 
@@ -30,6 +32,10 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/room-types", roomTypeRoutes);
+
+app.use("/api/rooms", roomRoutes);
 
 
 app.get("/", (_req, res) => {

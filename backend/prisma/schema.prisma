@@ -6,6 +6,23 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RoomStatus {
+  AVAILABLE
+  RESERVED
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+enum RoomTypeCategory {
+  ROOM
+  COTTAGE
+  TENT
+  CAMPING_SITE
+  CONFERENCE_HALL
+}
+
 model Tenant {
   id               String    @id @default(uuid())
   name             String
@@ -31,6 +48,8 @@ model Tenant {
   subscriptionPlan String?   @default("Enterprise")
   roles            Role[]
   users            User[]
+  roomTypes RoomType[]
+  rooms     Room[]
 }
 
 model Permission {
@@ -131,4 +150,75 @@ model RefreshToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model RoomType {
+  id          String             @id @default(uuid())
+  tenantId    String
+
+  name        String
+  category    RoomTypeCategory   @default(ROOM)
+  description String?
+
+  imageUrl    String?
+
+  capacity    Int
+  basePrice   Decimal            @db.Decimal(10,2)
+
+  size        Int?               // square metres
+  bedType     String?            // King, Queen, Twin...
+  maxAdults   Int?
+  maxChildren Int?
+
+  isActive    Boolean            @default(true)
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rooms        Room[]
+  amenities    RoomAmenity[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Room {
+  id          String        @id @default(uuid())
+  tenantId    String
+  roomTypeId  String
+  roomNumber  String
+  floor       String?
+  status      RoomStatus    @default(AVAILABLE)
+  price       Decimal?      @db.Decimal(10,2)
+  notes       String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roomType     RoomType     @relation(fields: [roomTypeId], references: [id])
+
+  @@unique([tenantId, roomNumber])
+  @@index([tenantId])
+  @@index([roomTypeId])
+}
+
+model Amenity {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  description String?
+  createdAt   DateTime        @default(now())
+
+  roomTypes   RoomAmenity[]
+}
+
+model RoomAmenity {
+  roomTypeId String
+  amenityId  String
+
+  roomType   RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenity    Amenity    @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([roomTypeId, amenityId])
 }

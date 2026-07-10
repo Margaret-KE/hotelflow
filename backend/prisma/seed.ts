@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+import { RoomTypeCategory } from "@prisma/client";
 import bcrypt from "bcrypt";
 import prisma from "../src/lib/prisma";
 
@@ -167,6 +168,125 @@ await prisma.user.upsert({
 });
 
 console.log("✅ Administrator account created");
+
+const amenities = [
+  "WiFi",
+  "Air Conditioning",
+  "Smart TV",
+  "Mini Bar",
+  "Coffee Maker",
+  "Hot Shower",
+  "Bathtub",
+  "Balcony",
+  "Desk",
+  "Parking",
+  "Breakfast Included",
+  "Swimming Pool",
+  "Conference Equipment",
+  "Camp Fire",
+  "Horse Riding Access",
+];
+
+for (const name of amenities) {
+  await prisma.amenity.upsert({
+    where: { name },
+    update: {},
+    create: { name },
+  });
+}
+
+console.log(`✅ ${amenities.length} amenities created`);
+
+const roomTypes = [
+  {
+    name: "Standard Room",
+    category: RoomTypeCategory.ROOM,
+    capacity: 2,
+    basePrice: 6500,
+  },
+  {
+    name: "Deluxe Room",
+    category: RoomTypeCategory.ROOM,
+    capacity: 2,
+    basePrice: 9500,
+  },
+  {
+    name: "Executive Suite",
+    category: RoomTypeCategory.ROOM,
+    capacity: 4,
+    basePrice: 18000,
+  },
+  {
+    name: "Family Cottage",
+    category: RoomTypeCategory.COTTAGE,
+    capacity: 6,
+    basePrice: 22000,
+  },
+  {
+    name: "Camping Tent",
+    category: RoomTypeCategory.TENT,
+    capacity: 2,
+    basePrice: 3000,
+  },
+  {
+    name: "Camping Site",
+    category: RoomTypeCategory.CAMPING_SITE,
+    capacity: 6,
+    basePrice: 2500,
+  },
+  {
+    name: "Conference Hall",
+    category: RoomTypeCategory.CONFERENCE_HALL,
+    capacity: 150,
+    basePrice: 35000,
+  },
+];
+
+for (const type of roomTypes) {
+  await prisma.roomType.upsert({
+    where: {
+      tenantId_name: {
+        tenantId: tenant.id,
+        name: type.name,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      ...type,
+    },
+  });
+}
+
+console.log(`✅ ${roomTypes.length} room types created`);
+
+const standardRoom = await prisma.roomType.findFirst({
+  where: {
+    tenantId: tenant.id,
+    name: "Standard Room",
+  },
+});
+
+if (standardRoom) {
+  for (let i = 1; i <= 20; i++) {
+    await prisma.room.upsert({
+      where: {
+        tenantId_roomNumber: {
+          tenantId: tenant.id,
+          roomNumber: `10${i}`,
+        },
+      },
+      update: {},
+      create: {
+        tenantId: tenant.id,
+        roomTypeId: standardRoom.id,
+        roomNumber: `10${i}`,
+      },
+    });
+  }
+}
+
+console.log("✅ Sample rooms created");
 }
 
 main()
