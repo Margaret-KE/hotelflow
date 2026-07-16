@@ -23,6 +23,36 @@ enum RoomTypeCategory {
   CONFERENCE_HALL
 }
 
+enum IDType {
+  NATIONAL_ID
+  PASSPORT
+  DRIVERS_LICENSE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ReservationStatus {
+  RESERVED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum BookingSource {
+  WALK_IN
+  PHONE
+  WEBSITE
+  BOOKING_COM
+  EXPEDIA
+  AIRBNB
+  AGENT
+}
+
 model Tenant {
   id               String    @id @default(uuid())
   name             String
@@ -50,6 +80,8 @@ model Tenant {
   users            User[]
   roomTypes RoomType[]
   rooms     Room[]
+  guests Guest[]
+  reservations Reservation[]
 }
 
 model Permission {
@@ -202,6 +234,95 @@ model Room {
   @@unique([tenantId, roomNumber])
   @@index([tenantId])
   @@index([roomTypeId])
+  reservations Reservation[]
+}
+
+model Guest {
+  id                String   @id @default(uuid())
+
+  tenantId          String
+
+  firstName         String
+  lastName          String
+
+  email             String?
+  phone             String
+
+  idType            IDType?
+  idNumber          String?
+
+  nationality       String?
+
+  gender            Gender?
+
+  dateOfBirth       DateTime?
+
+  address           String?
+  city              String?
+  country           String?
+
+  emergencyName     String?
+  emergencyPhone    String?
+
+  company           String?
+
+  notes             String?
+
+  vip               Boolean  @default(false)
+
+  blacklisted       Boolean  @default(false)
+
+  isActive          Boolean  @default(true)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([phone])
+  @@index([email])
+  @@index([lastName])
+  reservations Reservation[]
+}
+
+model Reservation {
+  id                 String              @id @default(uuid())
+
+  tenantId           String
+  guestId            String
+  roomId             String
+
+  confirmationNumber String              @unique
+
+  checkInDate        DateTime
+  checkOutDate       DateTime
+
+  actualCheckIn  DateTime?
+  actualCheckOut DateTime?
+
+  adults             Int                 @default(1)
+  children           Int                 @default(0)
+
+  totalAmount        Decimal             @db.Decimal(10,2)
+
+  status             ReservationStatus   @default(RESERVED)
+  source             BookingSource       @default(WALK_IN)
+
+  notes              String?
+
+  isActive           Boolean             @default(true)
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  guest Guest @relation(fields: [guestId], references: [id])
+  room Room @relation(fields: [roomId], references: [id])
+
+  @@index([tenantId])
+  @@index([guestId])
+  @@index([roomId])
 }
 
 model Amenity {

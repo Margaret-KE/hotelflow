@@ -9,6 +9,10 @@ import notFound from "./middleware/notFound";
 import errorHandler from "./middleware/errorHandler";
 import roomTypeRoutes from "./modules/room-types/roomType.routes";
 import roomRoutes from "./modules/rooms/room.routes";
+import guestRoutes from "./modules/guest/guest.routes";
+import reservationRoutes from "./modules/reservations/reservation.routes";
+import checkInRoutes from "./modules/checkin";
+import checkOutRoutes from "./modules/checkout";
 
 const app = express();
 
@@ -31,11 +35,19 @@ app.use(cookieParser());
 
 app.use(morgan("dev"));
 
-app.use("/api/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
-app.use("/api/room-types", roomTypeRoutes);
+app.use("/api/v1/room-types", roomTypeRoutes);
 
-app.use("/api/rooms", roomRoutes);
+app.use("/api/v1/rooms", roomRoutes);
+
+app.use("/api/v1/guests", guestRoutes);
+
+app.use("/api/v1/reservations", reservationRoutes);
+
+app.use("/api/v1/checkin", checkInRoutes);
+
+app.use("/api/v1/checkout", checkOutRoutes);
 
 
 app.get("/", (_req, res) => {

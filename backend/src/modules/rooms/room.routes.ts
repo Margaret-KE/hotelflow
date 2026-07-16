@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import validate from "../../middleware/validate";
 
+import authenticate from "../../middleware/authenticate";
+
 import {
   createRoomSchema,
   updateRoomSchema,
@@ -17,6 +19,9 @@ import {
 } from "./room.controller";
 
 const router = Router();
+
+// Protect every route below
+router.use(authenticate);
 
 router.get("/", getAllRooms);
 

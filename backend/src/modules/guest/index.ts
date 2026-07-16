@@ -1,0 +1,1 @@
+export { default as guestRoutes } from "./guest.routes";

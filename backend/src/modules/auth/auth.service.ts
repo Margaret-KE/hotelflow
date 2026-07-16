@@ -52,21 +52,20 @@ export async function login(data: LoginDto) {
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // Save refresh token
   const refreshTokenDays =
-  Number(process.env.REFRESH_TOKEN_DAYS) || 7;
-  
+    Number(process.env.REFRESH_TOKEN_DAYS) || 7;
+
   await prisma.refreshToken.create({
     data: {
       userId: user.id,
       token: refreshToken,
       expiresAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
+        Date.now() +
+          refreshTokenDays * 24 * 60 * 60 * 1000
       ),
     },
   });
 
-  // Update last login
   await prisma.user.update({
     where: {
       id: user.id,
@@ -76,7 +75,6 @@ export async function login(data: LoginDto) {
     },
   });
 
-  // Audit log
   await prisma.auditLog.create({
     data: {
       userId: user.id,

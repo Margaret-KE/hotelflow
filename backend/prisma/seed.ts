@@ -154,6 +154,7 @@ await prisma.user.upsert({
   },
   update: {
     roleId: adminRole.id,
+     password: hashedPassword,
     isActive: true,
   },
   create: {
