@@ -11,7 +11,8 @@ export async function checkOut(
     const reservation =
       await checkOutService.checkOut(
         req.user!.tenantId,
-        req.body.reservationId
+        req.body.reservationId,
+        req.user!.id
       );
 
     return res.status(200).json({

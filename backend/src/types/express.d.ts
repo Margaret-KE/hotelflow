@@ -9,6 +9,8 @@ declare global {
       email: string;
       firstName: string;
       lastName: string;
+
+      permissions: string[];
     }
 
     interface Request {

@@ -1,33 +1,37 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodError, ZodSchema } from "zod";
+import { ZodError, ZodTypeAny } from "zod";
 
-export default function validate(schema: ZodSchema) {
+type ValidationSchema = {
+  body?: ZodTypeAny;
+  params?: ZodTypeAny;
+  query?: ZodTypeAny;
+};
+
+export default function validate(
+  schema: ValidationSchema
+) {
   return async (
     req: Request,
     res: Response,
     next: NextFunction
   ) => {
     try {
-      const parsed = await schema.parseAsync({
-        body: req.body,
-        params: req.params,
-        query: req.query,
-      }) as {
-        body?: Request["body"];
-        params?: Request["params"];
-        query?: Request["query"];
-      };
-
-      if (parsed.body) {
-        req.body = parsed.body;
+      if (schema.body) {
+        req.body = (await schema.body.parseAsync(
+          req.body
+        )) as Request["body"];
       }
 
-      if (parsed.params) {
-        req.params = parsed.params;
+      if (schema.params) {
+        req.params = (await schema.params.parseAsync(
+          req.params
+        )) as Request["params"];
       }
 
-      if (parsed.query) {
-        req.query = parsed.query;
+      if (schema.query) {
+        req.query = (await schema.query.parseAsync(
+          req.query
+        )) as Request["query"];
       }
 
       next();

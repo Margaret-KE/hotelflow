@@ -8,7 +8,8 @@ import ApiError from "../../utils/ApiError";
 
 export async function checkOut(
   tenantId: string,
-  reservationId: string
+  reservationId: string,
+  userId: string
 ) {
   return prisma.$transaction(async (tx) => {
     const reservation =
@@ -51,27 +52,38 @@ export async function checkOut(
       },
     });
 
-    await tx.room.update({
-      where: {
-        id: reservation.room.id,
-      },
-      data: {
-        status: RoomStatus.AVAILABLE,
-      },
-    });
+   await tx.room.update({
+  where: {
+    id: reservation.room.id,
+  },
+  data: {
+    status: RoomStatus.AVAILABLE,
+  },
+});
 
-    return tx.reservation.findUnique({
-      where: {
-        id: reservation.id,
-      },
+// Audit log
+await tx.auditLog.create({
+  data: {
+    userId,
+    action: "CHECK_OUT",
+    entity: "RESERVATION",
+    entityId: reservation.id,
+    description: `Guest ${reservation.guest.firstName} ${reservation.guest.lastName} checked out from Room ${reservation.room.roomNumber}.`,
+  },
+});
+
+return tx.reservation.findUnique({
+  where: {
+    id: reservation.id,
+  },
+  include: {
+    guest: true,
+    room: {
       include: {
-        guest: true,
-        room: {
-          include: {
-            roomType: true,
-          },
-        },
+        roomType: true,
       },
-    });
+    },
+  },
+});
   });
 }

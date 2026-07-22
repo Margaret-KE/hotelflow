@@ -39,12 +39,18 @@ async function main() {
     { code: "reservations.create", name: "Create Reservation" },
     { code: "reservations.update", name: "Update Reservation" },
     { code: "reservations.delete", name: "Delete Reservation" },
+    { code: "reservations.cancel", name: "Cancel Reservation" },
 
     { code: "rooms.read", name: "View Rooms" },
     { code: "rooms.update", name: "Update Rooms" },
 
     { code: "guests.read", name: "View Guests" },
     { code: "guests.create", name: "Create Guest" },
+    { code: "guests.update", name: "Update Guest" },
+    { code: "guests.delete", name: "Delete Guest" },
+
+    { code: "checkin.create", name: "Check In Guest" },
+    { code: "checkout.create", name: "Check Out Guest" },
 
     { code: "restaurant.read", name: "Restaurant POS" },
     { code: "restaurant.create", name: "Create Restaurant Order" },

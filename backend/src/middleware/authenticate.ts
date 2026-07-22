@@ -13,7 +13,9 @@ export default async function authenticate(
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
-    return next(new ApiError(401, "Authentication required"));
+    return next(
+      new ApiError(401, "Authentication required")
+    );
   }
 
   const token = authHeader.split(" ")[1];
@@ -28,12 +30,22 @@ export default async function authenticate(
         isActive: true,
       },
       include: {
-        role: true,
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (!user) {
-      return next(new ApiError(401, "Invalid token"));
+      return next(
+        new ApiError(401, "Invalid token")
+      );
     }
 
     req.user = {
@@ -43,10 +55,18 @@ export default async function authenticate(
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      permissions: user.role.permissions.map(
+        (item) => item.permission.code
+      ),
     };
 
     next();
   } catch {
-    next(new ApiError(401, "Invalid or expired token"));
+    next(
+      new ApiError(
+        401,
+        "Invalid or expired token"
+      )
+    );
   }
 }

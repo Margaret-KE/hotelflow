@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const phoneRegex = /^\+?[0-9]{10,15}$/;
 
-export const createGuestSchema = z.object({
+export const createGuestSchema = {
   body: z.object({
     firstName: z
       .string()
@@ -63,14 +63,18 @@ export const createGuestSchema = z.object({
 
     blacklisted: z.boolean().optional(),
   }),
-});
+};
 
-export const updateGuestSchema = z.object({
-  body: createGuestSchema.shape.body.partial(),
-});
-
-export const guestIdSchema = z.object({
+export const updateGuestSchema = {
   params: z.object({
     id: z.uuid("Invalid guest ID"),
   }),
-});
+
+  body: createGuestSchema.body.partial(),
+};
+
+export const guestIdSchema = {
+  params: z.object({
+    id: z.uuid("Invalid guest ID"),
+  }),
+};
