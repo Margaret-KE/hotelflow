@@ -56,8 +56,9 @@ async function main() {
     { code: "restaurant.create", name: "Create Restaurant Order" },
     { code: "restaurant.update", name: "Update Restaurant Order" },
 
-    { code: "kitchen.read", name: "Kitchen Display" },
-    { code: "kitchen.print", name: "Print Kitchen Order" },
+    { code: "restaurant.kitchen.read", name: "Kitchen Display" },
+    { code: "restaurant.kitchen.update", name: "Update Kitchen Status" },
+    { code: "restaurant.kitchen.print", name: "Print Kitchen Order" },
 
     { code: "bar.read", name: "Bar POS" },
     { code: "bar.create", name: "Create Bar Order" },

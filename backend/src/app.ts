@@ -17,6 +17,7 @@ import paymentRoutes from "./modules/payments";
 import restaurantRoutes from "./modules/restaurant/restaurant.routes";
 import restaurantOrderRoutes from "./modules/restaurant/orders";
 import restaurantOrderItemRoutes from "./modules/restaurant/order-items";
+import kitchenRoutes from "./modules/restaurant/kitchen";
 
 const app = express();
 
@@ -60,6 +61,8 @@ app.use("/api/v1/restaurant", restaurantRoutes);
 app.use("/api/v1/restaurant/orders", restaurantOrderRoutes);
 
 app.use("/api/v1/restaurant/order-items", restaurantOrderItemRoutes);
+
+app.use("/api/v1/restaurant/kitchen", kitchenRoutes);
 
 app.get("/", (_req, res) => {
   res.status(200).json({
