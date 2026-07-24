@@ -16,6 +16,7 @@ import checkOutRoutes from "./modules/checkout";
 import paymentRoutes from "./modules/payments";
 import restaurantRoutes from "./modules/restaurant/restaurant.routes";
 import restaurantOrderRoutes from "./modules/restaurant/orders";
+import restaurantOrderItemRoutes from "./modules/restaurant/order-items";
 
 const app = express();
 
@@ -57,6 +58,8 @@ app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/restaurant", restaurantRoutes);
 
 app.use("/api/v1/restaurant/orders", restaurantOrderRoutes);
+
+app.use("/api/v1/restaurant/order-items", restaurantOrderItemRoutes);
 
 app.get("/", (_req, res) => {
   res.status(200).json({
