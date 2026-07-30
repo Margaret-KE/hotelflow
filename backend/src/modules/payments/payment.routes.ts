@@ -21,14 +21,18 @@ router.use(authenticate);
 router.post(
   "/",
   authorize("payments.create"),
-  validate(createPaymentSchema),
+  validate({
+    body: createPaymentSchema.body,
+  }),
   receivePayment
 );
 
 router.get(
   "/summary/:id",
   authorize("payments.read"),
-  validate(paymentIdSchema),
+  validate({
+    params: paymentIdSchema.params,
+  }),
   getPaymentSummary
 );
 

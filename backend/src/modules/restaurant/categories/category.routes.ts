@@ -41,8 +41,10 @@ router.put(
   "/:id",
   authenticate,
   authorize("restaurant.update"),
-  validate(categoryIdSchema),
-  validate(updateCategorySchema),
+  validate({
+    params: categoryIdSchema.params,
+    body: updateCategorySchema.body,
+  }),
   controller.updateExistingCategory
 );
 

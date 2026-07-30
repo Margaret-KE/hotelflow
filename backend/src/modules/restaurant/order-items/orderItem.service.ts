@@ -6,7 +6,7 @@ import ApiError from "../../../utils/ApiError";
 
 import {
   CreateRestaurantOrderItemRequest,
-  UpdateRestaurantOrderItemRequest,
+  UpdateRestaurantOrderItemRequest
 } from "./orderItem.types";
 
 async function recalculateOrderTotals(
@@ -14,7 +14,7 @@ async function recalculateOrderTotals(
   orderId: string
 ) {
   const orderItems =
-    await tx.restaurantOrderItem.findMany({
+    await tx.barOrderItem.findMany({
       where: {
         orderId,
       },
@@ -85,7 +85,7 @@ export async function getOrderItems(
     );
   }
 
-  return prisma.restaurantOrderItem.findMany({
+  return prisma.barOrderItem.findMany({
     where: {
       orderId,
     },
@@ -103,7 +103,7 @@ export async function getOrderItemById(
   itemId: string
 ) {
   const item =
-    await prisma.restaurantOrderItem.findFirst({
+    await prisma.barOrderItem.findFirst({
       where: {
         id: itemId,
       },
@@ -169,19 +169,55 @@ export async function addOrderItem(
       data.quantity
     );
 
-    const item =
-      await tx.restaurantOrderItem.create({
-        data: {
-          orderId: order.id,
-          menuItemId: menuItem.id,
-          quantity: data.quantity,
-          unitPrice,
-          total: lineTotal,
-        },
-        include: {
-          menuItem: true,
-        },
-      });
+let item;
+
+const existingItem =
+  await tx.barOrderItem.findFirst({
+    where: {
+      orderId: order.id,
+      menuItemId: menuItem.id,
+      status: "PENDING",
+    },
+    include: {
+      menuItem: true,
+    },
+  });
+
+if (existingItem) {
+  const newQuantity =
+    existingItem.quantity + data.quantity;
+
+  const newTotal =
+    unitPrice.mul(newQuantity);
+
+  item =
+    await tx.barOrderItem.update({
+      where: {
+        id: existingItem.id,
+      },
+      data: {
+        quantity: newQuantity,
+        total: newTotal,
+      },
+      include: {
+        menuItem: true,
+      },
+    });
+} else {
+  item =
+    await tx.barOrderItem.create({
+      data: {
+        orderId: order.id,
+        menuItemId: menuItem.id,
+        quantity: data.quantity,
+        unitPrice,
+        total: lineTotal,
+      },
+      include: {
+        menuItem: true,
+      },
+    });
+}
 
 await recalculateOrderTotals(
   tx,
@@ -225,7 +261,7 @@ export async function updateOrderItemQuantity(
 ) {
   return prisma.$transaction(async (tx) => {
     const item =
-      await tx.restaurantOrderItem.findFirst({
+      await tx.barOrderItem.findFirst({
         where: {
           id: itemId,
         },
@@ -250,7 +286,7 @@ export async function updateOrderItemQuantity(
     );
 
     const updatedItem =
-      await tx.restaurantOrderItem.update({
+      await tx.barOrderItem.update({
         where: {
           id: item.id,
         },
@@ -291,7 +327,7 @@ export async function cancelOrderItem(
 ) {
   return prisma.$transaction(async (tx) => {
     const item =
-      await tx.restaurantOrderItem.findFirst({
+      await tx.barOrderItem.findFirst({
         where: {
           id: itemId,
         },
@@ -308,11 +344,14 @@ export async function cancelOrderItem(
       );
     }
 
-    await tx.restaurantOrderItem.delete({
-      where: {
-        id: item.id,
-      },
-    });
+    await tx.barOrderItem.update({
+  where: {
+    id: item.id,
+  },
+  data: {
+    status: "CANCELLED",
+  },
+});
 
     await recalculateOrderTotals(
       tx,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const createCategorySchema = z.object({
+export const createCategorySchema = {
   body: z.object({
     name: z
       .string()
@@ -14,9 +14,9 @@ export const createCategorySchema = z.object({
       .max(255)
       .optional(),
   }),
-});
+};
 
-export const updateCategorySchema = z.object({
+export const updateCategorySchema = {
   body: z.object({
     name: z
       .string()
@@ -31,10 +31,10 @@ export const updateCategorySchema = z.object({
       .max(255)
       .optional(),
   }),
-});
+};
 
-export const categoryIdSchema = z.object({
+export const categoryIdSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
-});
+};

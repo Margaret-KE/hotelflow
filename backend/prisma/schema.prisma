@@ -84,12 +84,32 @@ enum RestaurantPaymentStatus {
   REFUNDED
 }
 
+enum RestaurantPaymentMethod {
+  CASH
+  MPESA
+  CARD
+  BANK_TRANSFER
+}
+
 enum KitchenItemStatus {
   PENDING
   PREPARING
   READY
   SERVED
   CANCELLED
+}
+
+enum BarOrderStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
+enum BarPaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
 }
 
 model Payment {
@@ -128,38 +148,43 @@ model Payment {
 }
 
 model Tenant {
-  id               String            @id @default(uuid())
-  name             String
-  slug             String            @unique
-  email            String?           @unique
-  phone            String?
-  website          String?
-  logo             String?
-  favicon          String?
-  primaryColor     String?           @default("#166534")
-  secondaryColor   String?           @default("#FACC15")
-  address          String?
-  city             String?
-  country          String?           @default("Kenya")
-  currency         String            @default("KES")
-  timezone         String            @default("Africa/Nairobi")
-  invoicePrefix    String            @default("INV")
-  receiptFooter    String?
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  subscriptionEnds DateTime?
-  subscriptionPlan String?           @default("Enterprise")
-  roles            Role[]
-  users            User[]
-  roomTypes        RoomType[]
-  rooms            Room[]
-  guests           Guest[]
-  reservations     Reservation[]
-  payments         Payment[]
-  menuCategories   MenuCategory[]
-  menuItems        MenuItem[]
-  restaurantOrders RestaurantOrder[]
+  id                 String              @id @default(uuid())
+  name               String
+  slug               String              @unique
+  email              String?             @unique
+  phone              String?
+  website            String?
+  logo               String?
+  favicon            String?
+  primaryColor       String?             @default("#166534")
+  secondaryColor     String?             @default("#FACC15")
+  address            String?
+  city               String?
+  country            String?             @default("Kenya")
+  currency           String              @default("KES")
+  timezone           String              @default("Africa/Nairobi")
+  invoicePrefix      String              @default("INV")
+  receiptFooter      String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  subscriptionEnds   DateTime?
+  subscriptionPlan   String?             @default("Enterprise")
+  roles              Role[]
+  users              User[]
+  roomTypes          RoomType[]
+  rooms              Room[]
+  guests             Guest[]
+  reservations       Reservation[]
+  payments           Payment[]
+  menuCategories     MenuCategory[]
+  menuItems          MenuItem[]
+  restaurantOrders   RestaurantOrder[]
+  restaurantPayments RestaurantPayment[]
+  barCategories      BarCategory[]
+  barMenuItems       BarMenuItem[]
+  barOrders          BarOrder[]
+  barPayments        BarPayment[]
 }
 
 model Permission {
@@ -206,25 +231,28 @@ model RolePermission {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  tenantId         String
-  roleId           String
-  firstName        String
-  lastName         String
-  email            String
-  phone            String?
-  password         String
-  avatar           String?
-  isActive         Boolean           @default(true)
-  lastLogin        DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  auditLogs        AuditLog[]
-  refreshTokens    RefreshToken[]
-  role             Role              @relation(fields: [roleId], references: [id])
-  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  paymentsReceived Payment[]
-  restaurantOrders RestaurantOrder[]
+  id                  String              @id @default(uuid())
+  tenantId            String
+  roleId              String
+  firstName           String
+  lastName            String
+  email               String
+  phone               String?
+  password            String
+  avatar              String?
+  isActive            Boolean             @default(true)
+  lastLogin           DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  auditLogs           AuditLog[]
+  refreshTokens       RefreshToken[]
+  role                Role                @relation(fields: [roleId], references: [id])
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  paymentsReceived    Payment[]
+  restaurantOrders    RestaurantOrder[]
+  restaurantPayments  RestaurantPayment[] @relation("RestaurantPaymentReceiver")
+  barPaymentsReceived BarPayment[]        @relation("BarPaymentReceiver")
+  barOrders           BarOrder[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -360,6 +388,7 @@ model Guest {
   tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   reservations     Reservation[]
   restaurantOrders RestaurantOrder[]
+  barOrders        BarOrder[]
 
   @@index([tenantId])
   @@index([phone])
@@ -402,6 +431,7 @@ model Reservation {
   room             Room              @relation(fields: [roomId], references: [id])
   payments         Payment[]
   restaurantOrders RestaurantOrder[]
+  barOrders        BarOrder[]
 
   @@index([tenantId])
   @@index([guestId])
@@ -522,6 +552,8 @@ model RestaurantOrder {
 
   items RestaurantOrderItem[]
 
+  payments RestaurantPayment[]
+
   @@unique([tenantId, orderNumber])
   @@index([tenantId])
   @@index([guestId])
@@ -558,4 +590,221 @@ model RestaurantOrderItem {
   @@index([orderId])
   @@index([menuItemId])
   @@index([status])
+}
+
+model RestaurantPayment {
+  id String @id @default(uuid())
+
+  tenantId     String
+  orderId      String
+  receivedById String
+
+  amount Decimal @db.Decimal(10, 2)
+
+  method RestaurantPaymentMethod
+
+  status RestaurantPaymentStatus @default(PAID)
+
+  reference String?
+
+  transactionId String?
+
+  notes String?
+
+  receiptNumber String?
+
+  paidAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  order RestaurantOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  receivedBy User @relation("RestaurantPaymentReceiver", fields: [receivedById], references: [id])
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([receivedById])
+  @@index([method])
+  @@index([status])
+}
+
+model BarCategory {
+  id String @id @default(uuid())
+
+  tenantId String
+
+  name String
+
+  description String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  menuItems BarMenuItem[]
+
+  @@unique([tenantId, name])
+}
+
+model BarMenuItem {
+  id String @id @default(uuid())
+
+  tenantId String
+
+  categoryId String
+
+  name String
+
+  description String?
+
+  price Decimal @db.Decimal(10, 2)
+
+  imageUrl String?
+
+  available Boolean @default(true)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  category BarCategory @relation(fields: [categoryId], references: [id])
+
+  orderItems BarOrderItem[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+}
+
+model BarOrder {
+  id String @id @default(uuid())
+
+  tenantId String
+
+  guestId String?
+
+  reservationId String?
+
+  createdById String
+
+  orderNumber String
+
+  status BarOrderStatus @default(OPEN)
+
+  paymentStatus BarPaymentStatus @default(UNPAID)
+
+  subtotal Decimal @default(0) @db.Decimal(10, 2)
+
+  tax Decimal @default(0) @db.Decimal(10, 2)
+
+  serviceCharge Decimal @default(0) @db.Decimal(10, 2)
+
+  discount Decimal @default(0) @db.Decimal(10, 2)
+
+  total Decimal @default(0) @db.Decimal(10, 2)
+
+  notes String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  guest Guest? @relation(fields: [guestId], references: [id])
+
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  items BarOrderItem[]
+
+  payments BarPayment[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([status])
+}
+
+model BarOrderItem {
+  id String @id @default(uuid())
+
+  orderId String
+
+  menuItemId String
+
+  quantity Int
+
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  total Decimal @db.Decimal(10, 2)
+
+  notes String?
+
+  status KitchenItemStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  order BarOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  menuItem BarMenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@index([status])
+}
+
+model BarPayment {
+  id String @id @default(uuid())
+
+  tenantId String
+
+  orderId String
+
+  receivedById String
+
+  amount Decimal @db.Decimal(10, 2)
+
+  method PaymentMethod
+
+  status PaymentStatus @default(COMPLETED)
+
+  reference String?
+
+  transactionId String?
+
+  notes String?
+
+  receiptNumber String?
+
+  paidAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  order BarOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  receivedBy User @relation("BarPaymentReceiver", fields: [receivedById], references: [id])
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([paidAt])
 }

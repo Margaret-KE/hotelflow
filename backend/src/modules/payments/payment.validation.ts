@@ -5,7 +5,7 @@ import {
   PaymentStatus,
 } from "@prisma/client";
 
-export const createPaymentSchema = z.object({
+export const createPaymentSchema = {
   body: z.object({
     reservationId: z.string().uuid(),
 
@@ -17,9 +17,9 @@ export const createPaymentSchema = z.object({
 
     notes: z.string().optional(),
   }),
-});
+};
 
-export const updatePaymentSchema = z.object({
+export const updatePaymentSchema = {
   body: z.object({
     status: z.nativeEnum(PaymentStatus).optional(),
 
@@ -27,10 +27,10 @@ export const updatePaymentSchema = z.object({
 
     notes: z.string().optional(),
   }),
-});
+};
 
-export const paymentIdSchema = z.object({
+export const paymentIdSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
-});
+};

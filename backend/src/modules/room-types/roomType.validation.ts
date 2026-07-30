@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const createRoomTypeSchema = z.object({
+export const createRoomTypeSchema = {
   body: z.object({
     name: z
       .string()
@@ -34,9 +34,9 @@ export const createRoomTypeSchema = z.object({
       .boolean()
       .optional(),
   }),
-});
+};
 
-export const updateRoomTypeSchema = z.object({
+export const updateRoomTypeSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
@@ -77,10 +77,10 @@ export const updateRoomTypeSchema = z.object({
       .boolean()
       .optional(),
   }),
-});
+};
 
-export const roomTypeIdSchema = z.object({
+export const roomTypeIdSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
-});
+};

@@ -9,7 +9,7 @@ const roomStatus = z.enum([
   "OUT_OF_SERVICE",
 ]);
 
-export const createRoomSchema = z.object({
+export const createRoomSchema = {
   body: z.object({
     roomNumber: z
       .string()
@@ -30,9 +30,9 @@ export const createRoomSchema = z.object({
       .trim()
       .optional(),
   }),
-});
+};
 
-export const updateRoomSchema = z.object({
+export const updateRoomSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
@@ -65,10 +65,10 @@ export const updateRoomSchema = z.object({
       .boolean()
       .optional(),
   }),
-});
+};
 
-export const roomIdSchema = z.object({
+export const roomIdSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
-});
+};

@@ -26,31 +26,42 @@ router.get("/", getAllReservations);
 
 router.get(
   "/:id",
-  validate(reservationIdSchema),
+  validate({
+    params: reservationIdSchema.params,
+  }),
   getReservation
 );
 
 router.post(
   "/",
-  validate(createReservationSchema),
+  validate({
+    body: createReservationSchema.body,
+  }),
   createNewReservation
 );
 
 router.put(
   "/:id",
-  validate(updateReservationSchema),
+  validate({
+    params: updateReservationSchema.params,
+    body: updateReservationSchema.body,
+  }),
   updateExistingReservation
 );
 
 router.patch(
   "/:id/cancel",
-  validate(reservationIdSchema),
+  validate({
+    params: reservationIdSchema.params,
+  }),
   cancelExistingReservation
 );
 
 router.delete(
   "/:id",
-  validate(reservationIdSchema),
+  validate({
+    params: reservationIdSchema.params,
+  }),
   removeReservation
 );
 

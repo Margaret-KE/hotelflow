@@ -1,9 +1,21 @@
-import { Request, Response, NextFunction, RequestHandler } from "express";
+import {
+  Request,
+  Response,
+  NextFunction,
+  RequestHandler,
+} from "express";
 
 export default function asyncHandler(
   fn: RequestHandler
 ): RequestHandler {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+  return (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    Promise.resolve(fn(req, res, next)).catch((error) => {
+      console.error(error);   // <-- Add this line
+      next(error);
+    });
   };
 }

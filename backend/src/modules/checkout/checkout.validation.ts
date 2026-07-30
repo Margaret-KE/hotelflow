@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const checkOutSchema = z.object({
+export const checkOutSchema = {
   body: z.object({
     reservationId: z.uuid({
       message: "Reservation ID is required",
     }),
   }),
-});
+};

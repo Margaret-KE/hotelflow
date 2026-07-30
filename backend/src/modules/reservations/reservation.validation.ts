@@ -4,9 +4,9 @@ import {
   ReservationStatus,
 } from "@prisma/client";
 
-const uuid = z.uuid("Invalid ID");
+const uuid = z.string().uuid("Invalid ID");
 
-export const createReservationSchema = z.object({
+export const createReservationSchema = {
   body: z
     .object({
       guestId: uuid,
@@ -47,9 +47,13 @@ export const createReservationSchema = z.object({
         path: ["checkOutDate"],
       }
     ),
-});
+};
 
-export const updateReservationSchema = z.object({
+export const updateReservationSchema = {
+  params: z.object({
+    id: uuid,
+  }),
+
   body: z.object({
     guestId: uuid.optional(),
 
@@ -84,10 +88,10 @@ export const updateReservationSchema = z.object({
       .max(500)
       .optional(),
   }),
-});
+};
 
-export const reservationIdSchema = z.object({
+export const reservationIdSchema = {
   params: z.object({
     id: uuid,
   }),
-});
+};

@@ -9,7 +9,7 @@ import {
 export async function getCategories(
   tenantId: string
 ) {
-  return prisma.menuCategory.findMany({
+  return prisma.barCategory.findMany({
     where: {
       tenantId,
       isActive: true,
@@ -49,7 +49,7 @@ export async function createCategory(
   userId: string,
   data: CreateCategoryRequest
 ) {
-  const existing = await prisma.menuCategory.findFirst({
+  const existing = await prisma.barCategory.findFirst({
   where: {
     tenantId,
     name: data.name,

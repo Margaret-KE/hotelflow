@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const loginSchema = z.object({
+export const loginSchema = {
   body: z.object({
     email: z.email({
       message: "A valid email address is required",
@@ -10,4 +10,4 @@ export const loginSchema = z.object({
       .string()
       .min(6, "Password must be at least 6 characters"),
   }),
-});
+};

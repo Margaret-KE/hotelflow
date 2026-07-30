@@ -18,6 +18,8 @@ import restaurantRoutes from "./modules/restaurant/restaurant.routes";
 import restaurantOrderRoutes from "./modules/restaurant/orders";
 import restaurantOrderItemRoutes from "./modules/restaurant/order-items";
 import kitchenRoutes from "./modules/restaurant/kitchen";
+import barRoutes from "./modules/bar/bar.routes";
+
 
 const app = express();
 
@@ -63,6 +65,8 @@ app.use("/api/v1/restaurant/orders", restaurantOrderRoutes);
 app.use("/api/v1/restaurant/order-items", restaurantOrderItemRoutes);
 
 app.use("/api/v1/restaurant/kitchen", kitchenRoutes);
+
+app.use("/api/v1/bar", barRoutes);
 
 app.get("/", (_req, res) => {
   res.status(200).json({
