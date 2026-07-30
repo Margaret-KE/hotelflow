@@ -1,43 +1,61 @@
 import {
+  LogIn,
+  LogOut,
   CalendarPlus,
-  UserPlus,
   UtensilsCrossed,
-  Building2,
-  Tent,
-  Trees,
+  Wine,
+  BedDouble,
+  Users,
+  BarChart3,
 } from "lucide-react";
 
 const actions = [
   {
-    title: "New Reservation",
+    title: "Check In",
+    icon: LogIn,
+    color: "bg-emerald-100 text-emerald-700",
+  },
+  {
+    title: "Check Out",
+    icon: LogOut,
+    color: "bg-red-100 text-red-700",
+  },
+  {
+    title: "Reservation",
     icon: CalendarPlus,
+    color: "bg-blue-100 text-blue-700",
   },
   {
-    title: "Walk-in Guest",
-    icon: UserPlus,
-  },
-  {
-    title: "Restaurant Order",
+    title: "Restaurant",
     icon: UtensilsCrossed,
+    color: "bg-orange-100 text-orange-700",
   },
   {
-    title: "Conference Booking",
-    icon: Building2,
+    title: "Bar POS",
+    icon: Wine,
+    color: "bg-purple-100 text-purple-700",
   },
   {
-    title: "Camping Booking",
-    icon: Tent,
+    title: "Rooms",
+    icon: BedDouble,
+    color: "bg-cyan-100 text-cyan-700",
   },
   {
-    title: "Guest Activity",
-    icon: Trees,
+    title: "Guests",
+    icon: Users,
+    color: "bg-pink-100 text-pink-700",
+  },
+  {
+    title: "Reports",
+    icon: BarChart3,
+    color: "bg-amber-100 text-amber-700",
   },
 ];
 
 export default function QuickActions() {
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <h2 className="mb-6 text-xl font-bold text-slate-800">
+      <h2 className="mb-6 text-xl font-semibold text-slate-800">
         Quick Actions
       </h2>
 
@@ -48,14 +66,15 @@ export default function QuickActions() {
           return (
             <button
               key={action.title}
-              className="rounded-xl border border-slate-200 p-4 transition hover:border-green-700 hover:bg-green-50"
+              className="group rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-green-600 hover:shadow-lg"
             >
-              <Icon
-                size={26}
-                className="mx-auto mb-3 text-green-700"
-              />
+              <div
+                className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${action.color}`}
+              >
+                <Icon size={26} />
+              </div>
 
-              <p className="text-sm font-medium">
+              <p className="mt-4 text-sm font-semibold text-slate-700 group-hover:text-green-700">
                 {action.title}
               </p>
             </button>
