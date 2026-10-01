@@ -16,27 +16,27 @@ router.use(authenticate);
 
 router.get(
   "/orders",
-  authorize("restaurant.kitchen.read"),
+  authorize("bar.kitchen.read"),
   kitchenController.getKitchenOrders
 );
 
 router.patch(
   "/items/:id/preparing",
-  authorize("restaurant.kitchen.update"),
+  authorize("bar.kitchen.update"),
   validate(kitchenItemIdSchema),
   kitchenController.startPreparingOrderItem
 );
 
 router.patch(
   "/items/:id/ready",
-  authorize("restaurant.kitchen.update"),
+  authorize("bar.kitchen.update"),
   validate(kitchenItemIdSchema),
   kitchenController.markOrderItemReady
 );
 
 router.patch(
   "/items/:id/served",
-  authorize("restaurant.kitchen.update"),
+  authorize("bar.kitchen.update"),
   validate(kitchenItemIdSchema),
   kitchenController.markOrderItemServed
 );

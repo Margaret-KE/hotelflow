@@ -15,6 +15,7 @@ import {
   createNewReservation,
   updateExistingReservation,
   cancelExistingReservation,
+  noShowExistingReservation,
   removeReservation,
 } from "./reservation.controller";
 
@@ -22,7 +23,10 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get("/", getAllReservations);
+router.get(
+  "/",
+  getAllReservations
+);
 
 router.get(
   "/:id",
@@ -55,6 +59,14 @@ router.patch(
     params: reservationIdSchema.params,
   }),
   cancelExistingReservation
+);
+
+router.patch(
+  "/:id/no-show",
+  validate({
+    params: reservationIdSchema.params,
+  }),
+  noShowExistingReservation
 );
 
 router.delete(

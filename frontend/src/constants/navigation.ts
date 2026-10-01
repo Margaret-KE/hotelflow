@@ -28,6 +28,7 @@ export const navigation = [
       },
     ],
   },
+
   {
     section: "FRONT OFFICE",
     items: [
@@ -48,6 +49,7 @@ export const navigation = [
       },
     ],
   },
+
   {
     section: "FOOD & BEVERAGE",
     items: [
@@ -59,7 +61,7 @@ export const navigation = [
       {
         title: "Kitchen Display",
         icon: ChefHat,
-        path: "/kitchen",
+        path: ROUTES.KITCHEN,
       },
       {
         title: "Bar POS",
@@ -68,6 +70,7 @@ export const navigation = [
       },
     ],
   },
+
   {
     section: "EVENTS & LEISURE",
     items: [
@@ -88,6 +91,7 @@ export const navigation = [
       },
     ],
   },
+
   {
     section: "OPERATIONS",
     items: [
@@ -103,6 +107,7 @@ export const navigation = [
       },
     ],
   },
+
   {
     section: "FINANCE",
     items: [
@@ -113,6 +118,7 @@ export const navigation = [
       },
     ],
   },
+
   {
     section: "ADMINISTRATION",
     items: [

@@ -9,28 +9,32 @@ import {
   UpdateBarOrderItemRequest,
 } from "./orderItem.types";
 
+const TAX_RATE = new Prisma.Decimal("0.16");
+const SERVICE_CHARGE_RATE = new Prisma.Decimal("0.10");
+
 async function recalculateOrderTotals(
   tx: Prisma.TransactionClient,
   orderId: string
 ) {
-  const orderItems =
-    await tx.barOrderItem.findMany({
-      where: {
-        orderId,
+  const orderItems = await tx.barOrderItem.findMany({
+    where: {
+      orderId,
+      status: {
+        not: "CANCELLED",
       },
-    });
+    },
+  });
 
   const subtotal = orderItems.reduce(
     (sum, item) => sum.add(item.total),
     new Prisma.Decimal(0)
   );
 
-  const order =
-    await tx.barOrder.findUnique({
-      where: {
-        id: orderId,
-      },
-    });
+  const order = await tx.barOrder.findUnique({
+    where: {
+      id: orderId,
+    },
+  });
 
   if (!order) {
     throw new ApiError(
@@ -39,13 +43,15 @@ async function recalculateOrderTotals(
     );
   }
 
-  const tax = subtotal.mul(0.16);
+  const tax = subtotal.mul(TAX_RATE);
 
-  const serviceCharge =
-    subtotal.mul(0.10);
+  const serviceCharge = subtotal.mul(
+    SERVICE_CHARGE_RATE
+  );
 
-  const discount =
-    new Prisma.Decimal(order.discount);
+  const discount = new Prisma.Decimal(
+    order.discount
+  );
 
   const grandTotal = subtotal
     .add(tax)
@@ -69,14 +75,13 @@ export async function getOrderItems(
   tenantId: string,
   orderId: string
 ) {
-  const order =
-    await prisma.barOrder.findFirst({
-      where: {
-        id: orderId,
-        tenantId,
-        isActive: true,
-      },
-    });
+  const order = await prisma.barOrder.findFirst({
+    where: {
+      id: orderId,
+      tenantId,
+      isActive: true,
+    },
+  });
 
   if (!order) {
     throw new ApiError(
@@ -102,16 +107,15 @@ export async function getOrderItemById(
   tenantId: string,
   itemId: string
 ) {
-  const item =
-    await prisma.barOrderItem.findFirst({
-      where: {
-        id: itemId,
-      },
-      include: {
-        menuItem: true,
-        order: true,
-      },
-    });
+  const item = await prisma.barOrderItem.findFirst({
+    where: {
+      id: itemId,
+    },
+    include: {
+      menuItem: true,
+      order: true,
+    },
+  });
 
   if (!item || item.order.tenantId !== tenantId) {
     throw new ApiError(
@@ -128,15 +132,21 @@ export async function addOrderItem(
   userId: string,
   data: CreateBarOrderItemRequest
 ) {
+  if (data.quantity <= 0) {
+    throw new ApiError(
+      400,
+      "Quantity must be greater than zero."
+    );
+  }
+
   return prisma.$transaction(async (tx) => {
-    const order =
-      await tx.barOrder.findFirst({
-        where: {
-          id: data.orderId,
-          tenantId,
-          isActive: true,
-        },
-      });
+    const order = await tx.barOrder.findFirst({
+      where: {
+        id: data.orderId,
+        tenantId,
+        isActive: true,
+      },
+    });
 
     if (!order) {
       throw new ApiError(
@@ -145,29 +155,32 @@ export async function addOrderItem(
       );
     }
 
-  const barMenuItem = await tx.barMenuItem.findFirst({
-  where: {
-    id: data.menuItemId,
-    tenantId,
-    isActive: true,
-    available: true,
-  },
-});
+    if (order.status !== "OPEN") {
+      throw new ApiError(
+        400,
+        "Items can only be added to open bar orders."
+      );
+    }
 
-if (!barMenuItem) {
-  throw new ApiError(
-    404,
-    "Bar menu item not found or unavailable"
-  );
-}
+    const barMenuItem = await tx.barMenuItem.findFirst({
+      where: {
+        id: data.menuItemId,
+        tenantId,
+        isActive: true,
+        available: true,
+      },
+    });
 
-    const unitPrice =
-      new Prisma.Decimal(barMenuItem.price);
+    if (!barMenuItem) {
+      throw new ApiError(
+        404,
+        "Bar menu item not found or unavailable"
+      );
+    }
 
-    const lineTotal =
-      unitPrice.mul(data.quantity);
-
-    let item;
+    const unitPrice = new Prisma.Decimal(
+      barMenuItem.price
+    );
 
     const existingItem =
       await tx.barOrderItem.findFirst({
@@ -181,41 +194,46 @@ if (!barMenuItem) {
         },
       });
 
+    let item;
+
     if (existingItem) {
       const newQuantity =
         existingItem.quantity +
         data.quantity;
 
-      const newTotal =
-        unitPrice.mul(newQuantity);
+      const newTotal = unitPrice.mul(
+        newQuantity
+      );
 
-      item =
-        await tx.barOrderItem.update({
-          where: {
-            id: existingItem.id,
-          },
-          data: {
-            quantity: newQuantity,
-            total: newTotal,
-          },
-          include: {
-            menuItem: true,
-          },
-        });
+      item = await tx.barOrderItem.update({
+        where: {
+          id: existingItem.id,
+        },
+        data: {
+          quantity: newQuantity,
+          total: newTotal,
+        },
+        include: {
+          menuItem: true,
+        },
+      });
     } else {
-      item =
-        await tx.barOrderItem.create({
-          data: {
-            orderId: order.id,
-            menuItemId: barMenuItem.id,
-            quantity: data.quantity,
-            unitPrice,
-            total: lineTotal,
-          },
-          include: {
-            menuItem: true,
-          },
-        });
+      const lineTotal = unitPrice.mul(
+        data.quantity
+      );
+
+      item = await tx.barOrderItem.create({
+        data: {
+          orderId: order.id,
+          menuItemId: barMenuItem.id,
+          quantity: data.quantity,
+          unitPrice,
+          total: lineTotal,
+        },
+        include: {
+          menuItem: true,
+        },
+      });
     }
 
     await recalculateOrderTotals(
@@ -226,10 +244,8 @@ if (!barMenuItem) {
     await tx.auditLog.create({
       data: {
         userId,
-        action:
-          "BAR_ORDER_ITEM_ADDED",
-        entity:
-          "BAR_ORDER_ITEM",
+        action: "BAR_ORDER_ITEM_ADDED",
+        entity: "BAR_ORDER_ITEM",
         entityId: item.id,
         description: `Added ${data.quantity} x ${barMenuItem.name} to order ${order.orderNumber}.`,
       },
@@ -258,6 +274,13 @@ export async function updateOrderItemQuantity(
   itemId: string,
   data: UpdateBarOrderItemRequest
 ) {
+  if (data.quantity <= 0) {
+    throw new ApiError(
+      400,
+      "Quantity must be greater than zero."
+    );
+  }
+
   return prisma.$transaction(async (tx) => {
     const item = await tx.barOrderItem.findFirst({
       where: {
@@ -276,22 +299,41 @@ export async function updateOrderItemQuantity(
       );
     }
 
-    const unitPrice = new Prisma.Decimal(item.unitPrice);
+    if (item.order.status !== "OPEN") {
+      throw new ApiError(
+        400,
+        "Items can only be updated on open bar orders."
+      );
+    }
 
-    const lineTotal = unitPrice.mul(data.quantity);
+    if (item.status !== "PENDING") {
+      throw new ApiError(
+        400,
+        "Only pending items can be updated."
+      );
+    }
 
-    const updatedItem = await tx.barOrderItem.update({
-      where: {
-        id: item.id,
-      },
-      data: {
-        quantity: data.quantity,
-        total: lineTotal,
-      },
-      include: {
-        menuItem: true,
-      },
-    });
+    const unitPrice = new Prisma.Decimal(
+      item.unitPrice
+    );
+
+    const lineTotal = unitPrice.mul(
+      data.quantity
+    );
+
+    const updatedItem =
+      await tx.barOrderItem.update({
+        where: {
+          id: item.id,
+        },
+        data: {
+          quantity: data.quantity,
+          total: lineTotal,
+        },
+        include: {
+          menuItem: true,
+        },
+      });
 
     await recalculateOrderTotals(
       tx,
@@ -335,14 +377,39 @@ export async function cancelOrderItem(
       );
     }
 
-    await tx.barOrderItem.update({
-      where: {
-        id: item.id,
-      },
-      data: {
-        status: "CANCELLED",
-      },
-    });
+    if (item.order.status !== "OPEN") {
+      throw new ApiError(
+        400,
+        "Items can only be cancelled on open bar orders."
+      );
+    }
+
+    if (item.status === "CANCELLED") {
+      throw new ApiError(
+        400,
+        "Order item is already cancelled."
+      );
+    }
+
+    if (item.status === "SERVED") {
+      throw new ApiError(
+        400,
+        "Served items cannot be cancelled."
+      );
+    }
+
+    const updatedItem =
+      await tx.barOrderItem.update({
+        where: {
+          id: item.id,
+        },
+        data: {
+          status: "CANCELLED",
+        },
+        include: {
+          menuItem: true,
+        },
+      });
 
     await recalculateOrderTotals(
       tx,
@@ -359,8 +426,6 @@ export async function cancelOrderItem(
       },
     });
 
-    return {
-      success: true,
-    };
+    return updatedItem;
   });
 }

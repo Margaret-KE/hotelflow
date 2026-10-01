@@ -82,88 +82,88 @@ export async function createOrder(
   userId: string,
   data: CreateRestaurantOrderRequest
 ) {
-  return prisma.$transaction(async (tx) => {
-    if (data.guestId) {
-      const guest = await tx.guest.findFirst({
+  if (data.guestId) {
+    const guest = await prisma.guest.findFirst({
+      where: {
+        id: data.guestId,
+        tenantId,
+        isActive: true,
+      },
+    });
+
+    if (!guest) {
+      throw new ApiError(
+        404,
+        "Guest not found"
+      );
+    }
+  }
+
+  if (data.reservationId) {
+    const reservation =
+      await prisma.reservation.findFirst({
         where: {
-          id: data.guestId,
+          id: data.reservationId,
           tenantId,
           isActive: true,
         },
       });
 
-      if (!guest) {
-        throw new ApiError(
-          404,
-          "Guest not found"
-        );
-      }
-    }
-
-    if (data.reservationId) {
-      const reservation =
-        await tx.reservation.findFirst({
-          where: {
-            id: data.reservationId,
-            tenantId,
-            isActive: true,
-          },
-        });
-
-      if (!reservation) {
-        throw new ApiError(
-          404,
-          "Reservation not found"
-        );
-      }
-    }
-
-    const orderNumber =
-      await generateOrderNumber(
-        "REST",
-        tenantId
+    if (!reservation) {
+      throw new ApiError(
+        404,
+        "Reservation not found"
       );
+    }
+  }
 
-    const order =
-      await tx.restaurantOrder.create({
-        data: {
-          tenantId,
+  const orderNumber =
+    await generateOrderNumber(
+      "REST",
+      tenantId
+    );
 
-          guestId: data.guestId,
+  const order =
+    await prisma.restaurantOrder.create({
+      data: {
+        tenantId,
 
-          reservationId:
-            data.reservationId,
+        guestId: data.guestId,
 
-          createdById: userId,
+        reservationId:
+          data.reservationId,
 
-          orderNumber,
+        createdById: userId,
 
-          status:
-            RestaurantOrderStatus.OPEN,
+        orderNumber,
 
-          paymentStatus:
-            RestaurantPaymentStatus.UNPAID,
+        status:
+          RestaurantOrderStatus.OPEN,
 
-          subtotal:
-            new Prisma.Decimal(0),
+        paymentStatus:
+          RestaurantPaymentStatus.UNPAID,
 
-          tax:
-            new Prisma.Decimal(0),
+        subtotal:
+          new Prisma.Decimal(0),
 
-          serviceCharge:
-            new Prisma.Decimal(0),
+        tax:
+          new Prisma.Decimal(0),
 
-          discount:
-            new Prisma.Decimal(0),
+        serviceCharge:
+          new Prisma.Decimal(0),
 
-          total:
-            new Prisma.Decimal(0),
+        discount:
+          new Prisma.Decimal(0),
 
-          notes: data.notes,
-        },
-      });
+        total:
+          new Prisma.Decimal(0),
 
-    await tx.auditLog.create({
+        notes: data.notes,
+      },
+    });
+
+  try {
+    await prisma.auditLog.create({
       data: {
         userId,
 
@@ -178,20 +178,29 @@ export async function createOrder(
         description: `Created restaurant order ${order.orderNumber}.`,
       },
     });
+  } catch (error) {
+    console.error(
+      "Failed to create restaurant order audit log:",
+      error
+    );
+  }
 
-    return tx.restaurantOrder.findUnique({
-      where: {
-        id: order.id,
+  return prisma.restaurantOrder.findUnique({
+    where: {
+      id: order.id,
+    },
+
+    include: {
+      guest: true,
+
+      reservation: true,
+
+      items: {
+        include: {
+          menuItem: true,
+        },
       },
-
-      include: {
-        guest: true,
-
-        reservation: true,
-
-        items: true,
-      },
-    });
+    },
   });
 }
 

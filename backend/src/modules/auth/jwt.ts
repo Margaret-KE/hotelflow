@@ -13,6 +13,19 @@ export interface JwtPayload {
   email: string;
 }
 
+if (!process.env.JWT_ACCESS_SECRET) {
+  throw new Error("JWT_ACCESS_SECRET is missing");
+}
+
+if (!process.env.JWT_REFRESH_SECRET) {
+  throw new Error("JWT_REFRESH_SECRET is missing");
+}
+
+console.log("JWT configuration:", {
+  accessSecretLength: ACCESS_SECRET.length,
+  refreshSecretLength: REFRESH_SECRET.length,
+});
+
 export function generateAccessToken(payload: JwtPayload) {
   return jwt.sign(payload, ACCESS_SECRET, {
     expiresIn: ACCESS_EXPIRES_IN,

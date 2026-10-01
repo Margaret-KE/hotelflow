@@ -15,6 +15,13 @@ import {
 const router = Router();
 
 router.get(
+  "/",
+  authenticate,
+  authorize("bar.read"),
+  controller.getAllCategories
+);
+
+router.get(
   "/:id",
   authenticate,
   authorize("bar.read"),

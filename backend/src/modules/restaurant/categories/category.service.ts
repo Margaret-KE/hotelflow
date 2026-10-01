@@ -2,19 +2,18 @@ import prisma from "../../../lib/prisma";
 import ApiError from "../../../utils/ApiError";
 
 import {
-  CreateCategoryRequest,
-  UpdateCategoryRequest,
+  CreateCategoryInput,
+  UpdateCategoryInput,
 } from "./category.types";
 
 export async function getCategories(
   tenantId: string
 ) {
-  return prisma.barCategory.findMany({
+  return prisma.menuCategory.findMany({
     where: {
       tenantId,
       isActive: true,
     },
-
     orderBy: {
       name: "asc",
     },
@@ -23,21 +22,24 @@ export async function getCategories(
 
 export async function getCategoryById(
   tenantId: string,
-  categoryId: string
+  id: string
 ) {
   const category =
     await prisma.menuCategory.findFirst({
       where: {
-        id: categoryId,
+        id,
         tenantId,
         isActive: true,
+      },
+      include: {
+        menuItems: true,
       },
     });
 
   if (!category) {
     throw new ApiError(
       404,
-      "Category not found"
+      "Restaurant category not found"
     );
   }
 
@@ -47,21 +49,23 @@ export async function getCategoryById(
 export async function createCategory(
   tenantId: string,
   userId: string,
-  data: CreateCategoryRequest
+  data: CreateCategoryInput
 ) {
-  const existing = await prisma.barCategory.findFirst({
-  where: {
-    tenantId,
-    name: data.name,
-  },
-});
+  const existing =
+    await prisma.menuCategory.findFirst({
+      where: {
+        tenantId,
+        name: data.name,
+        isActive: true,
+      },
+    });
 
-if (existing) {
-  throw new ApiError(
-    409,
-    "Category already exists"
-  );
-}
+  if (existing) {
+    throw new ApiError(
+      409,
+      "Restaurant category already exists"
+    );
+  }
 
   const category =
     await prisma.menuCategory.create({
@@ -75,10 +79,10 @@ if (existing) {
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "CATEGORY_CREATED",
+      action: "RESTAURANT_CATEGORY_CREATED",
       entity: "MENU_CATEGORY",
       entityId: category.id,
-      description: `Created menu category '${category.name}'.`,
+      description: `Created restaurant category ${category.name}.`,
     },
   });
 
@@ -88,14 +92,24 @@ if (existing) {
 export async function updateCategory(
   tenantId: string,
   userId: string,
-  categoryId: string,
-  data: UpdateCategoryRequest
+  id: string,
+  data: UpdateCategoryInput
 ) {
   const category =
-    await getCategoryById(
-      tenantId,
-      categoryId
+    await prisma.menuCategory.findFirst({
+      where: {
+        id,
+        tenantId,
+        isActive: true,
+      },
+    });
+
+  if (!category) {
+    throw new ApiError(
+      404,
+      "Restaurant category not found"
     );
+  }
 
   if (
     data.name &&
@@ -108,7 +122,7 @@ export async function updateCategory(
           name: data.name,
           isActive: true,
           NOT: {
-            id: categoryId,
+            id,
           },
         },
       });
@@ -116,7 +130,7 @@ export async function updateCategory(
     if (existing) {
       throw new ApiError(
         409,
-        "Category already exists"
+        "Restaurant category already exists"
       );
     }
   }
@@ -124,7 +138,7 @@ export async function updateCategory(
   const updated =
     await prisma.menuCategory.update({
       where: {
-        id: categoryId,
+        id,
       },
       data,
     });
@@ -132,10 +146,10 @@ export async function updateCategory(
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "CATEGORY_UPDATED",
+      action: "RESTAURANT_CATEGORY_UPDATED",
       entity: "MENU_CATEGORY",
       entityId: updated.id,
-      description: `Updated menu category '${updated.name}'.`,
+      description: `Updated restaurant category ${updated.name}.`,
     },
   });
 
@@ -145,17 +159,37 @@ export async function updateCategory(
 export async function deleteCategory(
   tenantId: string,
   userId: string,
-  categoryId: string
+  id: string
 ) {
   const category =
-    await getCategoryById(
-      tenantId,
-      categoryId
+    await prisma.menuCategory.findFirst({
+      where: {
+        id,
+        tenantId,
+        isActive: true,
+      },
+      include: {
+        menuItems: true,
+      },
+    });
+
+  if (!category) {
+    throw new ApiError(
+      404,
+      "Restaurant category not found"
     );
+  }
+
+  if (category.menuItems.length > 0) {
+    throw new ApiError(
+      400,
+      "Cannot delete a category that has menu items"
+    );
+  }
 
   await prisma.menuCategory.update({
     where: {
-      id: category.id,
+      id,
     },
     data: {
       isActive: false,
@@ -165,10 +199,10 @@ export async function deleteCategory(
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "CATEGORY_DELETED",
+      action: "RESTAURANT_CATEGORY_DELETED",
       entity: "MENU_CATEGORY",
       entityId: category.id,
-      description: `Deleted menu category '${category.name}'.`,
+      description: `Deleted restaurant category ${category.name}.`,
     },
   });
 

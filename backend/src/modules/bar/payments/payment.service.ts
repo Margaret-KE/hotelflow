@@ -1,9 +1,12 @@
 import {
   Prisma,
   BarPaymentStatus,
+  BarOrderStatus,
+  PaymentStatus,
 } from "@prisma/client";
 
 import prisma from "../../../lib/prisma";
+
 import ApiError from "../../../utils/ApiError";
 
 import {
@@ -23,7 +26,11 @@ export async function getBarBill(
         isActive: true,
       },
       include: {
-        payments: true,
+        payments: {
+          where: {
+            status: PaymentStatus.COMPLETED,
+          },
+        },
       },
     });
 
@@ -34,16 +41,17 @@ export async function getBarBill(
     );
   }
 
-  const amountPaid = order.payments.reduce(
-    (sum, payment) =>
-      sum.add(payment.amount),
-    new Prisma.Decimal(0)
-  );
-
-  const balance =
-    new Prisma.Decimal(order.total).sub(
-      amountPaid
+  const amountPaid =
+    order.payments.reduce(
+      (sum, payment) =>
+        sum.add(payment.amount),
+      new Prisma.Decimal(0)
     );
+
+  const total =
+    new Prisma.Decimal(order.total);
+
+  const balance = total.sub(amountPaid);
 
   return {
     orderId: order.id,
@@ -54,7 +62,7 @@ export async function getBarBill(
       order.serviceCharge
     ),
     discount: Number(order.discount),
-    total: Number(order.total),
+    total: Number(total),
     amountPaid: Number(amountPaid),
     balance: Number(balance),
     paymentStatus:
@@ -67,6 +75,13 @@ export async function receiveBarPayment(
   receivedById: string,
   data: CreateBarPaymentRequest
 ) {
+  if (data.amount <= 0) {
+    throw new ApiError(
+      400,
+      "Payment amount must be greater than zero."
+    );
+  }
+
   return prisma.$transaction(async (tx) => {
     const order =
       await tx.barOrder.findFirst({
@@ -76,7 +91,11 @@ export async function receiveBarPayment(
           isActive: true,
         },
         include: {
-          payments: true,
+          payments: {
+            where: {
+              status: PaymentStatus.COMPLETED,
+            },
+          },
         },
       });
 
@@ -84,6 +103,26 @@ export async function receiveBarPayment(
       throw new ApiError(
         404,
         "Bar order not found"
+      );
+    }
+
+    if (
+      order.status ===
+      BarOrderStatus.CANCELLED
+    ) {
+      throw new ApiError(
+        400,
+        "Payments cannot be received for a cancelled bar order."
+      );
+    }
+
+    if (
+      order.status ===
+      BarOrderStatus.COMPLETED
+    ) {
+      throw new ApiError(
+        400,
+        "Payments cannot be received for a completed bar order."
       );
     }
 
@@ -97,18 +136,25 @@ export async function receiveBarPayment(
     const orderTotal =
       new Prisma.Decimal(order.total);
 
-    const paymentAmount =
-      new Prisma.Decimal(data.amount);
-
     const balance =
       orderTotal.sub(amountPaid);
+
+    if (balance.lessThanOrEqualTo(0)) {
+      throw new ApiError(
+        400,
+        "This bar order has already been fully paid."
+      );
+    }
+
+    const paymentAmount =
+      new Prisma.Decimal(data.amount);
 
     if (
       paymentAmount.greaterThan(balance)
     ) {
       throw new ApiError(
         400,
-        "Payment exceeds outstanding balance"
+        "Payment exceeds outstanding balance."
       );
     }
 
@@ -118,19 +164,14 @@ export async function receiveBarPayment(
           tenantId,
           orderId: order.id,
           receivedById,
-
           amount: paymentAmount,
-
           method: data.method,
-
+          status: PaymentStatus.COMPLETED,
           reference: data.reference,
-
           transactionId:
             data.transactionId,
-
           receiptNumber:
             data.receiptNumber,
-
           notes: data.notes,
         },
       });
@@ -141,7 +182,9 @@ export async function receiveBarPayment(
     let paymentStatus: BarPaymentStatus =
       BarPaymentStatus.UNPAID;
 
-    if (newAmountPaid.equals(orderTotal)) {
+    if (
+      newAmountPaid.equals(orderTotal)
+    ) {
       paymentStatus =
         BarPaymentStatus.PAID;
     } else if (
@@ -178,42 +221,61 @@ export async function receiveBarPayment(
           id: order.id,
         },
         include: {
-          payments: true,
+          payments: {
+            where: {
+              status:
+                PaymentStatus.COMPLETED,
+            },
+          },
         },
       });
 
     if (!updatedOrder) {
       throw new ApiError(
         404,
-        "Bar order not found"
+        "Bar order not found."
       );
     }
 
     const updatedAmountPaid =
       updatedOrder.payments.reduce(
-        (sum, payment) =>
-          sum.add(payment.amount),
+        (sum, existingPayment) =>
+          sum.add(existingPayment.amount),
         new Prisma.Decimal(0)
       );
 
     const updatedBalance =
-      new Prisma.Decimal(updatedOrder.total).sub(
-        updatedAmountPaid
-      );
+      new Prisma.Decimal(
+        updatedOrder.total
+      ).sub(updatedAmountPaid);
 
     return {
       payment,
       bill: {
         orderId: updatedOrder.id,
-        orderNumber: updatedOrder.orderNumber,
-        subtotal: Number(updatedOrder.subtotal),
-        tax: Number(updatedOrder.tax),
-        serviceCharge: Number(updatedOrder.serviceCharge),
-        discount: Number(updatedOrder.discount),
-        total: Number(updatedOrder.total),
-        amountPaid: Number(updatedAmountPaid),
-        balance: Number(updatedBalance),
-        paymentStatus: updatedOrder.paymentStatus,
+        orderNumber:
+          updatedOrder.orderNumber,
+        subtotal: Number(
+          updatedOrder.subtotal
+        ),
+        tax: Number(
+          updatedOrder.tax
+        ),
+        serviceCharge: Number(
+          updatedOrder.serviceCharge
+        ),
+        discount: Number(
+          updatedOrder.discount
+        ),
+        total: Number(
+          updatedOrder.total
+        ),
+        amountPaid:
+          Number(updatedAmountPaid),
+        balance:
+          Number(updatedBalance),
+        paymentStatus:
+          updatedOrder.paymentStatus,
       },
     };
   });

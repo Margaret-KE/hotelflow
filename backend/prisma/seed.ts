@@ -62,6 +62,11 @@ async function main() {
 
     { code: "bar.read", name: "Bar POS" },
     { code: "bar.create", name: "Create Bar Order" },
+    { code: "bar.update", name: "Update Bar Orders" },
+    { code: "bar.delete", name: "Delete Bar Items" },
+    { code: "bar.kitchen.read", name: "Bar Kitchen Display" },
+    { code: "bar.kitchen.update", name: "Update Bar Kitchen Status" },
+    { code: "bar.kitchen.print", name: "Print Bar Kitchen Order" },
 
     { code: "conference.read", name: "Conference Management" },
     { code: "conference.create", name: "Conference Booking" },

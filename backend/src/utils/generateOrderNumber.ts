@@ -17,8 +17,10 @@ export async function generateOrderNumber(
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const count =
-    await prisma.restaurantOrder.count({
+  let count = 0;
+
+  if (prefix === "BAR") {
+    count = await prisma.barOrder.count({
       where: {
         tenantId,
         createdAt: {
@@ -27,6 +29,27 @@ export async function generateOrderNumber(
         },
       },
     });
+  } else if (prefix === "REST") {
+    count = await prisma.restaurantOrder.count({
+      where: {
+        tenantId,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+  } else {
+    count = await prisma.restaurantOrder.count({
+      where: {
+        tenantId,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+  }
 
   const sequence = String(count + 1).padStart(4, "0");
 

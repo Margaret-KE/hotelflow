@@ -40,9 +40,10 @@ router.post(
 router.put(
   "/:id",
   validate({
-  params: updateRoomSchema.params,
-  body: updateRoomSchema.body,
-}),
+    params: updateRoomSchema.params,
+    body: updateRoomSchema.body,
+  }),
+  updateExistingRoom
 );
 
 router.delete(

@@ -14,7 +14,7 @@ export async function getKitchenQueue(
       },
 
       status: {
-        in: ["PENDING", "PREPARING"],
+        in: ["PENDING", "PREPARING", "READY"],
       },
     },
 

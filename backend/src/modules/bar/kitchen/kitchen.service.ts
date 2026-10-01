@@ -1,9 +1,11 @@
 import prisma from "../../../lib/prisma";
 
+import ApiError from "../../../utils/ApiError";
+
 export async function getKitchenQueue(
   tenantId: string
 ) {
-  return prisma.restaurantOrderItem.findMany({
+  return prisma.barOrderItem.findMany({
     where: {
       order: {
         tenantId,
@@ -12,29 +14,28 @@ export async function getKitchenQueue(
           not: "CANCELLED",
         },
       },
-
       status: {
-        in: ["PENDING", "PREPARING"],
+        in: [
+          "PENDING",
+          "PREPARING",
+          "READY",
+        ],
       },
     },
-
     include: {
       menuItem: true,
-
       order: {
         include: {
           guest: true,
+          reservation: true,
         },
       },
     },
-
     orderBy: {
       createdAt: "asc",
     },
   });
 }
-
-import ApiError from "../../../utils/ApiError";
 
 export async function startPreparing(
   tenantId: string,
@@ -42,11 +43,15 @@ export async function startPreparing(
   itemId: string
 ) {
   const item =
-    await prisma.restaurantOrderItem.findFirst({
+    await prisma.barOrderItem.findFirst({
       where: {
         id: itemId,
         order: {
           tenantId,
+          isActive: true,
+          status: {
+            not: "CANCELLED",
+          },
         },
       },
       include: {
@@ -58,7 +63,7 @@ export async function startPreparing(
   if (!item) {
     throw new ApiError(
       404,
-      "Kitchen item not found"
+      "Bar kitchen item not found"
     );
   }
 
@@ -70,22 +75,31 @@ export async function startPreparing(
   }
 
   const updated =
-    await prisma.restaurantOrderItem.update({
+    await prisma.barOrderItem.update({
       where: {
         id: item.id,
       },
       data: {
         status: "PREPARING",
       },
+      include: {
+        menuItem: true,
+        order: {
+          include: {
+            guest: true,
+            reservation: true,
+          },
+        },
+      },
     });
 
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "KITCHEN_PREPARING",
-      entity: "RESTAURANT_ORDER_ITEM",
+      action: "BAR_KITCHEN_PREPARING",
+      entity: "BAR_ORDER_ITEM",
       entityId: item.id,
-      description: `Kitchen started preparing ${item.menuItem.name}.`,
+      description: `Bar kitchen started preparing ${item.menuItem.name}.`,
     },
   });
 
@@ -98,11 +112,15 @@ export async function markReady(
   itemId: string
 ) {
   const item =
-    await prisma.restaurantOrderItem.findFirst({
+    await prisma.barOrderItem.findFirst({
       where: {
         id: itemId,
         order: {
           tenantId,
+          isActive: true,
+          status: {
+            not: "CANCELLED",
+          },
         },
       },
       include: {
@@ -114,7 +132,7 @@ export async function markReady(
   if (!item) {
     throw new ApiError(
       404,
-      "Kitchen item not found"
+      "Bar kitchen item not found"
     );
   }
 
@@ -126,22 +144,31 @@ export async function markReady(
   }
 
   const updated =
-    await prisma.restaurantOrderItem.update({
+    await prisma.barOrderItem.update({
       where: {
         id: item.id,
       },
       data: {
         status: "READY",
       },
+      include: {
+        menuItem: true,
+        order: {
+          include: {
+            guest: true,
+            reservation: true,
+          },
+        },
+      },
     });
 
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "KITCHEN_READY",
-      entity: "RESTAURANT_ORDER_ITEM",
+      action: "BAR_KITCHEN_READY",
+      entity: "BAR_ORDER_ITEM",
       entityId: item.id,
-      description: `${item.menuItem.name} is ready to serve.`,
+      description: `${item.menuItem.name} is ready to serve at the bar.`,
     },
   });
 
@@ -154,11 +181,15 @@ export async function markServed(
   itemId: string
 ) {
   const item =
-    await prisma.restaurantOrderItem.findFirst({
+    await prisma.barOrderItem.findFirst({
       where: {
         id: itemId,
         order: {
           tenantId,
+          isActive: true,
+          status: {
+            not: "CANCELLED",
+          },
         },
       },
       include: {
@@ -170,7 +201,7 @@ export async function markServed(
   if (!item) {
     throw new ApiError(
       404,
-      "Kitchen item not found"
+      "Bar kitchen item not found"
     );
   }
 
@@ -182,22 +213,31 @@ export async function markServed(
   }
 
   const updated =
-    await prisma.restaurantOrderItem.update({
+    await prisma.barOrderItem.update({
       where: {
         id: item.id,
       },
       data: {
         status: "SERVED",
       },
+      include: {
+        menuItem: true,
+        order: {
+          include: {
+            guest: true,
+            reservation: true,
+          },
+        },
+      },
     });
 
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "KITCHEN_SERVED",
-      entity: "RESTAURANT_ORDER_ITEM",
+      action: "BAR_KITCHEN_SERVED",
+      entity: "BAR_ORDER_ITEM",
       entityId: item.id,
-      description: `${item.menuItem.name} has been served.`,
+      description: `${item.menuItem.name} has been served from the bar.`,
     },
   });
 

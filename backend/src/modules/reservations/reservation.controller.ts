@@ -110,6 +110,28 @@ export async function cancelExistingReservation(
   }
 }
 
+export async function noShowExistingReservation(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const reservation =
+      await reservationService.noShowReservation(
+        req.user!.tenantId,
+        String(req.params.id)
+      );
+
+    return res.status(200).json({
+      success: true,
+      message: "Reservation marked as no-show successfully",
+      data: reservation,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function removeReservation(
   req: Request,
   res: Response,
